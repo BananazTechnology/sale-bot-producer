@@ -1,0 +1,20 @@
+version: "3.8"
+services:
+  saleBotProducer:
+    image: bananaztech/sale-bot-producer:latest
+    container_name: sale-bot-producer-prod
+    restart: always
+    stdin_open: true
+    tty: true
+    mem_limit: 1G
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://host:3306/DB_Name?createDatabaseIfNotExist=true
+      SPRING_DATASOURCE_USERNAME: username
+      SPRING_DATASOURCE_PASSWORD: password
+    ports:
+      - "9092:8080"
+
+networks:
+  default:
+    external:
+      name: bots
