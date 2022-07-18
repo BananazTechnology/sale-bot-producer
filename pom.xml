@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>tech.bananaz</groupId>
 	<artifactId>sale-bot-producer</artifactId>
-	<version>0.1.0</version>
+	<version>1.0.0</version>
 	<name>sale-bot-producer</name>
 	<description>A @spring-projects framework project which loads items into @mysql</description>
 	<properties>

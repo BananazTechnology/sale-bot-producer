@@ -7,7 +7,6 @@ import lombok.ToString.Exclude;
 import tech.bananaz.bot.repositories.SaleConfigRepository;
 import tech.bananaz.bot.repositories.SaleEventRepository;
 import tech.bananaz.bot.services.SalesScheduler;
-import tech.bananaz.bot.utils.RarityEngine;
 
 @ToString(includeFieldNames=true)
 @Data
@@ -43,23 +42,15 @@ public class Contract {
 	private boolean isSolana 		  = false;
 	// For bundles support
 	private boolean showBundles 	  = true;
-	@SuppressWarnings("unused")
-	private long lastOpenseaId;
-	@SuppressWarnings("unused")
-	private String lastOpenseaHash;
 
 	// Discord Settings
 	// If enabled, will auto pull from LooksRare for all
 	private boolean autoRarity 		  = false;
-	// Proves the URLs for formatting Discord
-	private RarityEngine engine;
 	// For when the slug in URL is not the same as Contract slug
 	private String raritySlug;
 	
 	// LooksRare settings
 	private boolean excludeLooks 	  = false;
-	@SuppressWarnings("unused")
-	private long lastLooksrareId;
 
 	public void startSalesScheduler() {
 		newRequest = new SalesScheduler(this);

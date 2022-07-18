@@ -27,7 +27,7 @@ public class SalesScheduler extends TimerTask {
 	@Getter
 	private String openSeaLastHash  = "";
 	@Getter
-	private int  previousLooksId 	= 0;
+	private long previousLooksId 	= 0;
 	@Getter
 	private long openSeaIdBuffer	= 0;
 	private Timer timer 		 	= new Timer(); // creating timer
@@ -100,7 +100,7 @@ public class SalesScheduler extends TimerTask {
 			for(int i = 0; i < assetEvents.size(); i++) {
 				// Grab sub-objects in message
 				JSONObject newListing   = (JSONObject) assetEvents.get(i);
-				long id = Long.valueOf(newListing.getAsString("id"));
+				long id = newListing.getAsNumber("id").longValue();
 				if(id > this.openSeaIdBuffer) {
 					SaleEvent event = new SaleEvent(this.contract);
 					event.build(newListing);
@@ -148,7 +148,7 @@ public class SalesScheduler extends TimerTask {
 				for(int i = 0; i < events.size(); i++) {
 					// Grab sub-objects in message 
 					JSONObject sale = (JSONObject) events.get(i);
-					int id = Integer.valueOf(sale.getAsString("id"));
+					long id = sale.getAsNumber("id").longValue();
 					if(id > this.previousLooksId) {
 						// Build event
 						SaleEvent event    = new SaleEvent(this.contract);
@@ -164,7 +164,7 @@ public class SalesScheduler extends TimerTask {
 				}
 			}
 			JSONObject sale = (JSONObject) events.get(0);
-			int id = Integer.valueOf(sale.getAsString("id"));
+			long id = sale.getAsNumber("id").longValue();
 			if(this.previousLooksId == id) LOGGER.info(String.format("No sales found this LooksRare loop: %s", this.contract.toString()));
 			previousLooksId = id;
 		}

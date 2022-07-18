@@ -11,7 +11,6 @@ import tech.bananaz.bot.models.SaleConfig;
 import tech.bananaz.bot.models.SalesProperties;
 import tech.bananaz.bot.repositories.SaleConfigRepository;
 import tech.bananaz.bot.repositories.SaleEventRepository;
-import tech.bananaz.bot.utils.RarityEngine;
 import static java.util.Objects.nonNull;
 import static tech.bananaz.bot.utils.StringUtils.nonEquals;
 
@@ -76,12 +75,6 @@ public class UpdateScheduler extends TimerTask {
 						if(nonEquals(cont.getRaritySlug(), conf.getRaritySlugOverwrite())) {
 							updatedItems.add(String.format("raritySlug: %s->%s", cont.getRaritySlug(), conf.getRaritySlugOverwrite()));
 							cont.setRaritySlug(conf.getRaritySlugOverwrite());
-						}
-						// Rarity Engine
-						RarityEngine rarityEngine = (conf.getRarityEngine() != null) ? RarityEngine.fromString(conf.getRarityEngine()): RarityEngine.RARITY_TOOLS;
-						if(nonEquals(cont.getEngine().toString(), rarityEngine)) {
-							updatedItems.add(String.format("raritySlug: %s->%s", cont.getEngine().toString(), conf.getAutoRarity()));
-							cont.setEngine(rarityEngine);
 						}
 						
 

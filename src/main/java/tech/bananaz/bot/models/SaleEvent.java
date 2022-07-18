@@ -1,9 +1,7 @@
 package tech.bananaz.bot.models;
 
 import java.math.BigDecimal;
-import java.text.DecimalFormat;
 import java.time.Instant;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -13,30 +11,28 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
-
 import lombok.Data;
 import lombok.ToString;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import tech.bananaz.bot.utils.CryptoConvertUtils;
 import tech.bananaz.bot.utils.ENSUtils;
+import tech.bananaz.bot.utils.EventType;
 import tech.bananaz.bot.utils.MarketPlace;
 import tech.bananaz.bot.utils.RarityEngine;
 import tech.bananaz.bot.utils.Ticker;
 import tech.bananaz.bot.utils.UrlUtils;
 import tech.bananaz.bot.utils.CryptoConvertUtils.Unit;
-
 import static java.util.Objects.nonNull;
 import static java.util.Objects.isNull;
 
 @ToString(includeFieldNames=true)
 @Data
 @Entity
-@Table(name = "sale_event")
+@Table(name = "event")
 public class SaleEvent implements Comparable<SaleEvent> {
 	
 	// Private / Transient
-	private static final DecimalFormat dFormat  = new DecimalFormat("####,###,###.00");
 	private static final String DF_API_URL      = "http://proxy.aaronrenner.com/api/rarity/deadfellaz/";
 	private static final String GEISHA_API_URL  = "http://proxy.aaronrenner.com/api/rarity/geisha/";
 	private static final String AUTO_RARITY_URL = "https://api.traitsniper.com/api/projects/%s/nfts?token_id=%s&trait_count=true&trait_norm=true";
@@ -50,56 +46,55 @@ public class SaleEvent implements Comparable<SaleEvent> {
 	
 	// Required for entity
 	@Id
-	private long       id;
+	private long         id;
 	@Column(columnDefinition = "VARCHAR(75)")
-	private String     name;
-	private Instant    createdDate;
+	private String       name;
+	private Instant      createdDate;
 	@Column(columnDefinition = "VARCHAR(50)")
-	private String     tokenId;
+	private String       tokenId;
 	@Column(columnDefinition = "VARCHAR(75)")
-	private String     collectionName;
-	private String     collectionImageUrl;
+	private String       collectionName;
+	private String       collectionImageUrl;
 	@Column(columnDefinition = "VARCHAR(50)")
-	private String     slug;
-	private String     imageUrl;
+	private String       slug;
+	private String       imageUrl;
 	@Column(columnDefinition = "VARCHAR(127)")
-	private String     permalink;
-	private int	       quantity;
+	private String       permalink;
+	private int	         quantity;
 	@Column(columnDefinition = "VARCHAR(50)")
-	private String     sellerWalletAddy;
+	private String       sellerWalletAddy;
 	@Column(columnDefinition = "VARCHAR(50)")
-	private String     sellerName;
+	private String       sellerName;
 	@Column(columnDefinition = "VARCHAR(127)")
-	private String     sellerUrl;
+	private String       sellerUrl;
 	@Column(columnDefinition = "VARCHAR(50)")
-	private String     buyerWalletAddy;
+	private String       buyerWalletAddy;
 	@Column(columnDefinition = "VARCHAR(50)")
-	private String     buyerName;
+	private String       buyerName;
 	@Column(columnDefinition = "VARCHAR(127)")
-	private String     buyerUrl;
-	@Column(columnDefinition = "VARCHAR(50)")
-	private String     displayNameOutput;
+	private String       buyerUrl;
 	@Column(columnDefinition = "VARCHAR(6)")
-	private String     rarity;
-	@Column(columnDefinition = "VARCHAR(50)")
-	private String     rarityRedirect;
-	@Column(columnDefinition = "VARCHAR(25)")
-	private BigDecimal listingPriceInCrypto;
-	@Column(columnDefinition = "VARCHAR(25)")
-	private BigDecimal listingPriceInUsd;
-	@Column(columnDefinition = "VARCHAR(75)")
-	private String     listingAmoutOutput;
-	@Enumerated( EnumType.STRING )
-	@Column(columnDefinition = "VARCHAR(6)")
-	private Ticker     cryptoPaymentType;
+	private String       rarity;
 	@Enumerated( EnumType.STRING )
 	@Column(columnDefinition = "VARCHAR(50)")
-	private RarityEngine engine;
+	private RarityEngine rarityEngine;
+	@Column(columnDefinition = "VARCHAR(50)")
+	private String       rarityUrl;
+	@Column(columnDefinition = "VARCHAR(25)")
+	private BigDecimal   priceInCrypto;
+	@Column(columnDefinition = "VARCHAR(25)")
+	private BigDecimal   priceInUsd;
+	@Enumerated( EnumType.STRING )
+	@Column(columnDefinition = "VARCHAR(6)")
+	private Ticker       cryptoType;
+	@Enumerated( EnumType.STRING )
+	@Column(columnDefinition = "VARCHAR(7)")
+	private EventType    eventType;
 	@Enumerated( EnumType.STRING )
 	@Column(columnDefinition = "VARCHAR(50)")
 	private MarketPlace  market;
 	// These last few items are for the consumer
-	private long         contractId;
+	private long         configId;
 	@Column(columnDefinition = "VARCHAR(50)")
 	private String       consumedBy;
 	@Column(nullable = false, columnDefinition="TINYINT(1) UNSIGNED DEFAULT 0")
@@ -116,18 +111,17 @@ public class SaleEvent implements Comparable<SaleEvent> {
 		JSONObject token 	   = (JSONObject) looksRareEvent.get("token");
 		JSONObject collection  = (JSONObject) looksRareEvent.get("collection");
 		JSONObject order  	   = (JSONObject) looksRareEvent.get("order");
+		String listingInWei    = order.getAsString("price");
 		
 		// Grab direct variables
-		String listingInWei    = order.getAsString("price"); 
-		String collectionAddy  = collection.getAsString("address");
 		this.id 			   = Long.valueOf(looksRareEvent.getAsString("id"));
+		this.name			   = token.getAsString("name");
+		this.tokenId		   = token.getAsString("tokenId");
 		this.collectionName    = collection.getAsString("name");
 		this.slug              = String.valueOf(this.collectionName.toLowerCase().replace(" ", ""));
 		this.createdDate	   = Instant.parse(looksRareEvent.getAsString("createdAt"));
-		this.tokenId		   = token.getAsString("tokenId");
 		this.imageUrl      	   = token.getAsString("imageURI");
-		this.displayNameOutput = token.getAsString("name");
-		this.permalink		   = String.format("https://looksrare.org/collections/%s/%s", collectionAddy, tokenId);
+		this.permalink		   = String.format("https://looksrare.org/collections/%s/%s", this.contract.getContractAddress(), tokenId);
 		this.sellerWalletAddy  = looksRareEvent.getAsString("from");
 		this.buyerWalletAddy  = looksRareEvent.getAsString("to");
 		// Processing seller
@@ -150,15 +144,16 @@ public class SaleEvent implements Comparable<SaleEvent> {
 		this.buyerUrl		   = String.format("%s%s", ETHERSCAN_URL, this.buyerWalletAddy);
 		
 		// Make calculations about price
-		this.listingPriceInCrypto  = convert.convertToCrypto(listingInWei, Unit.ETH);
-		this.listingAmoutOutput    = String.format("%s%s", this.listingPriceInCrypto, Ticker.ETH.getSymbol());
-		this.quantity 	 	   	   = Integer.valueOf(order.getAsString("amount"));
-		this.market 			   = MarketPlace.LOOKSRARE;
-		this.cryptoPaymentType     = Ticker.ETH;
+		this.priceInCrypto     = convert.convertToCrypto(listingInWei, Unit.ETH);
+		this.quantity 	 	   = Integer.valueOf(order.getAsString("amount"));
 		
 		// Process final things to complete the object
+		this.market 		   = MarketPlace.LOOKSRARE;
+		this.cryptoType  	   = Ticker.ETH;
+		this.eventType		   = EventType.SALE;
+		this.configId 	       = this.contract.getId();
+		getImageUrl();
 		getRarity();
-		this.contractId = this.contract.getId();
 	}
 	
 	public void build(JSONObject openSeaEvent) {
@@ -169,7 +164,6 @@ public class SaleEvent implements Comparable<SaleEvent> {
 		JSONObject sellerUser   = (JSONObject) sellerObj.get("user");
 		JSONObject buyerObj    = (JSONObject) openSeaEvent.get("winner_account");
 		JSONObject buyerUser   = (JSONObject) buyerObj.get("user");
-		String paymentSymbol    = null; 
 		
 		// Grab direct variables
 		this.id 				= openSeaEvent.getAsNumber("id").longValue();
@@ -187,7 +181,7 @@ public class SaleEvent implements Comparable<SaleEvent> {
 		
 		// Process ETH on OpenSea
 		if(nonNull(paymentToken)) {
-			paymentSymbol      = paymentToken.getAsString("symbol");
+			this.cryptoType    = Ticker.fromString(paymentToken.getAsString("symbol"));
 			usdOfPayment   	   = paymentToken.getAsString("usd_price");
 			decimals           = Integer.valueOf(paymentToken.getAsString("decimals"));
 			this.sellerUrl	   = String.format("%s%s", ETHERSCAN_URL, this.sellerWalletAddy);
@@ -195,9 +189,7 @@ public class SaleEvent implements Comparable<SaleEvent> {
 		} else {
 			// Process SOL on OpenSea
 			if(this.contract.isSolana()) {
-				// For the purpose of rolling out SOL quickly we need a quick fix for missing currency formatting
-				usdOfPayment   = "0";
-				paymentSymbol  = Ticker.SOL.toString();
+				this.cryptoType    = Ticker.SOL;
 				decimals 	   = CryptoConvertUtils.Unit.SOL.getDecimal();
 				this.sellerUrl = String.format("%s%s", SOLSCAN_URL, this.sellerWalletAddy);
 				this.buyerUrl  = String.format("%s%s", SOLSCAN_URL, this.buyerWalletAddy);
@@ -217,36 +209,22 @@ public class SaleEvent implements Comparable<SaleEvent> {
 			this.permalink = assetBundleObj.getAsString("permalink");
 		}
 		
-		// Setup name and rarity
-		this.displayNameOutput  = getNftDisplayName(this.name, this.collectionName, this.tokenId);
+		// Name formatting for when null, must be processed after if/else above
+		this.name = getNftDisplayName(this.name, this.collectionName, this.tokenId);
 		
 		// Make calculations about price
-		this.listingPriceInCrypto  = convert.convertToCrypto(listingInWei, decimals);
-		double priceOfOnePayment   = Double.parseDouble(usdOfPayment);
-		this.listingPriceInUsd 	   = this.listingPriceInCrypto.multiply(BigDecimal.valueOf(priceOfOnePayment));
-		
-		// Build price display for pretty output
-		this.listingAmoutOutput    = null;
-		// This is wrapped in try/catch for if the searched paymentSymbol has no Ticker symbol available
-		try {
-			Ticker symbol = Ticker.fromString(paymentSymbol);
-			this.cryptoPaymentType = symbol;
-			String newSymbol = symbol.getSymbol();
-			this.listingAmoutOutput = String.format("%s%s %s", 
-														this.listingPriceInCrypto, 
-														newSymbol, 
-														(this.listingPriceInUsd.doubleValue() > 0.0) ? "($" + dFormat.format(this.listingPriceInUsd.doubleValue()) + ")" : "");
-		} catch (Exception e) {
-			e.printStackTrace();
+		this.priceInCrypto  = convert.convertToCrypto(listingInWei, decimals);
+		if(nonNull(usdOfPayment)) {
+			double priceOfOnePayment = Double.parseDouble(usdOfPayment);
+			this.priceInUsd 	   	 = this.priceInCrypto.multiply(BigDecimal.valueOf(priceOfOnePayment));
 		}
-		// When no Ticker is available this will build a default
-		if(isNull(this.listingAmoutOutput)) this.listingAmoutOutput = String.format("%s %s %s", this.listingPriceInCrypto, paymentSymbol, (this.listingPriceInUsd.doubleValue() > 0.0) ? "($" + dFormat.format(this.listingPriceInUsd.doubleValue()) + ")" : "");
-		if(decimals == 0 && isNull(usdOfPayment)) this.listingAmoutOutput = "ERROR";
-		this.market = MarketPlace.OPENSEA;
 		
 		// Process final things to complete the object
+		this.market    = MarketPlace.OPENSEA;
+		this.configId  = this.contract.getId();
+		this.eventType = EventType.SALE;
+		getImageUrl();
 		getRarity();
-		this.contractId = this.contract.getId();
 	}
 	
 	private String getNftDisplayName(String nftName, String collectionName, String tokenId) throws NullPointerException {
@@ -269,42 +247,42 @@ public class SaleEvent implements Comparable<SaleEvent> {
 	private void getDeadfellazRarity(String tokenId) {
 		try {
 			JSONObject response = urlUtils.getObjectRequest(DF_API_URL + tokenId, null);
-			this.rarity = response.getAsString("rarity");
+			this.rarity 		= response.getAsString("rarity");
 			
 			// Formats a URL for Discord
-			this.engine = RarityEngine.RARITY_TOOLS;
+			this.rarityEngine 		  = RarityEngine.RARITY_TOOLS;
 			String raritySlugOverride = (nonNull(this.contract.getRaritySlug())) ? this.contract.getRaritySlug() : this.slug;
-			this.rarityRedirect = String.format(this.contract.getEngine().getUrl(), raritySlugOverride, this.tokenId);
+			this.rarityUrl		  	  = String.format(RarityEngine.RARITY_TOOLS.getUrl(), raritySlugOverride, this.tokenId);
 		} catch (Exception e) {}
 	}
 	
 	private void getGeishaRarity(String tokenId) {
 		try {
 			JSONObject response = urlUtils.getObjectRequest(GEISHA_API_URL + tokenId, null);
-			this.rarity = response.getAsString("rarity");
+			this.rarity 		= response.getAsString("rarity");
 			
 			// Formats a URL for Discord
-			this.engine = RarityEngine.RARITY_TOOLS;
+			this.rarityEngine 		  = RarityEngine.RARITY_TOOLS;
 			String raritySlugOverride = (nonNull(this.contract.getRaritySlug())) ? this.contract.getRaritySlug() : this.slug;
-			this.rarityRedirect = String.format(this.contract.getEngine().getUrl(), raritySlugOverride, this.tokenId);
+			this.rarityUrl 	  		  = String.format(RarityEngine.RARITY_TOOLS.getUrl(), raritySlugOverride, this.tokenId);
 		} catch (Exception e) {}
 	}
 	
 	private void getAutoRarity() {
 		try {
-			String buildUrl = String.format(AUTO_RARITY_URL, this.contract.getContractAddress(), this.tokenId);
+			String buildUrl 		= String.format(AUTO_RARITY_URL, this.contract.getContractAddress(), this.tokenId);
 			// Add User-Agent for legality
-			HttpHeaders headers = new HttpHeaders();
+			HttpHeaders headers 	= new HttpHeaders();
 			headers.add(HttpHeaders.USER_AGENT, "PostmanRuntime/7.29.0");
 			HttpEntity<String> prop = new HttpEntity<>(headers);
-			JSONObject response = urlUtils.getObjectRequest(buildUrl, prop);
-			JSONArray nfts = (JSONArray) response.get("nfts");
-			JSONObject firstItem = (JSONObject) nfts.get(0);
-			this.rarity = firstItem.getAsString("rarity_rank");
+			JSONObject response 	= urlUtils.getObjectRequest(buildUrl, prop);
+			JSONArray nfts 			= (JSONArray) response.get("nfts");
+			JSONObject firstItem 	= (JSONObject) nfts.get(0);
+			this.rarity 			= firstItem.getAsString("rarity_rank");
 			
 			// Formats a URL for Discord
-			this.engine = RarityEngine.TRAIT_SNIPER;
-			this.rarityRedirect = String.format(this.contract.getEngine().getUrl(), this.contract.getContractAddress(), this.tokenId);
+			this.rarityEngine 		= RarityEngine.TRAIT_SNIPER;
+			this.rarityUrl 			= String.format(RarityEngine.TRAIT_SNIPER.getUrl(), this.contract.getContractAddress(), this.tokenId);
 		} catch (Exception e) {}
 	}
 	
@@ -319,20 +297,18 @@ public class SaleEvent implements Comparable<SaleEvent> {
 			if(this.contract.isAutoRarity() && isNull(this.rarity)) {
 				getAutoRarity();
 			}
-			if(isNull(this.engine)) this.engine = this.contract.getEngine();
 		}
 		return this.rarity;
 	}
 	
 	public String getImageUrl() {
-		String response = null;
+		if(isNull(this.imageUrl)) this.imageUrl = this.collectionImageUrl;
 		if(nonNull(this.imageUrl)) {
-			if(!this.imageUrl.contains(".svg") && !this.imageUrl.isBlank()) {
-				response = this.imageUrl;
+			if(this.imageUrl.contains(".svg") || this.imageUrl.isBlank() || this.imageUrl.isEmpty()) {
+				this.imageUrl = this.collectionImageUrl;
 			}
 		}
-		response = (nonNull(response)) ? response : this.collectionImageUrl;
-		return response;
+		return this.imageUrl;
 	}
 	
 	@Override
@@ -343,7 +319,7 @@ public class SaleEvent implements Comparable<SaleEvent> {
 	}
 	
 	public String getHash() {
-		return String.format("%s:%s", this.sellerWalletAddy, this.listingPriceInCrypto.toString());
+		return String.format("%s:%s", this.sellerWalletAddy, this.priceInCrypto.toPlainString());
 	}
 	
 	private void parseCollectionInfo(JSONObject asset) {

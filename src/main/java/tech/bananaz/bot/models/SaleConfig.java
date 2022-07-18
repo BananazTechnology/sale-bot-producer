@@ -34,7 +34,6 @@ public class SaleConfig {
 	private Boolean showBundles;
 	@Column(nullable = false, columnDefinition="TINYINT(1) UNSIGNED DEFAULT 0")
 	private Boolean autoRarity;
-	private String  rarityEngine;
 	private String  raritySlugOverwrite;
 	@Column(nullable = false, columnDefinition="TINYINT(1) UNSIGNED DEFAULT 0")
 	private Boolean excludeOpensea;
@@ -45,13 +44,9 @@ public class SaleConfig {
 	@Column(nullable = false, columnDefinition="TINYINT(1) UNSIGNED DEFAULT 0")
 	private Boolean excludeTwitter;
 	@Column(nullable = false, columnDefinition="TINYINT(1) UNSIGNED DEFAULT 0")
-	private Boolean contractIsSlug;
+	private Boolean isSlug;
 	@Column(nullable = false, columnDefinition="TINYINT(1) UNSIGNED DEFAULT 0")
 	private Boolean solanaOnOpensea;
-	@Column(columnDefinition="BIGINT UNSIGNED DEFAULT 0")
-	private Long    lastLooksId;
-	@Column(columnDefinition="BIGINT UNSIGNED DEFAULT 0")
-	private Long    lastOpenseaId;
 	@Column(nullable = false, columnDefinition="TINYINT(1) UNSIGNED DEFAULT 1")
 	private Boolean active;
 
