@@ -4,9 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import lombok.ToString;
 import lombok.ToString.Exclude;
-import tech.bananaz.bot.repositories.SaleConfigRepository;
-import tech.bananaz.bot.repositories.SaleEventRepository;
+import tech.bananaz.repositories.SaleConfigPagingRepository;
+import tech.bananaz.repositories.EventPagingRepository;
 import tech.bananaz.bot.services.SalesScheduler;
+import tech.bananaz.models.Sale;
 
 @ToString(includeFieldNames=true)
 @Data
@@ -18,11 +19,11 @@ public class Contract {
 	
 	@Exclude
 	@JsonIgnore
-	private SaleConfigRepository configs;
+	private SaleConfigPagingRepository configs;
 	
 	@Exclude
 	@JsonIgnore
-	private SaleEventRepository events;
+	private EventPagingRepository events;
 
 	// Pairs from DB definition
 	private long id;
@@ -51,6 +52,9 @@ public class Contract {
 	
 	// LooksRare settings
 	private boolean excludeLooks 	  = false;
+	
+	// To save on DB calls
+	Sale config;
 
 	public void startSalesScheduler() {
 		newRequest = new SalesScheduler(this);
@@ -59,6 +63,10 @@ public class Contract {
 	
 	public void stopSalesScheduler() {
 		newRequest.stop();
+	}
+	
+	public boolean getIsScheduleActive() {
+		return this.newRequest.isActive();
 	}
 	
 	public long getLastOpenseaId() {

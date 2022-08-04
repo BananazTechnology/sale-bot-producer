@@ -7,24 +7,24 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import tech.bananaz.bot.models.Contract;
 import tech.bananaz.bot.models.ContractCollection;
-import tech.bananaz.bot.models.SaleConfig;
-import tech.bananaz.bot.models.SalesProperties;
-import tech.bananaz.bot.repositories.SaleConfigRepository;
-import tech.bananaz.bot.repositories.SaleEventRepository;
+import tech.bananaz.bot.utils.ContractBuilder;
+import tech.bananaz.models.Sale;
+import tech.bananaz.repositories.SaleConfigPagingRepository;
+import tech.bananaz.repositories.EventPagingRepository;
 import static java.util.Objects.nonNull;
-import static tech.bananaz.bot.utils.StringUtils.nonEquals;
+import static tech.bananaz.utils.StringUtils.nonEquals;
 
 @Component
 public class UpdateScheduler extends TimerTask {
 	
 	@Autowired
-	private SaleConfigRepository configs;
+	private SaleConfigPagingRepository configs;
 	
 	@Autowired
 	private ContractCollection contracts;
 	
 	@Autowired
-	private SaleEventRepository events;
+	private EventPagingRepository events;
 	
 	/** Important variables needed for Runtime */
 	private final int REFRESH_REQ = 60000;
@@ -53,8 +53,8 @@ public class UpdateScheduler extends TimerTask {
 	@Override
 	public void run() {
 		if(nonNull(this.contracts) && active) {
-			List<SaleConfig> allListingConfigs = this.configs.findAll();
-			for(SaleConfig conf : allListingConfigs) {
+			Iterable<Sale> allListingConfigs = this.configs.findAll();
+			for(Sale conf : allListingConfigs) {
 				try {
 					List<String> updatedItems = new ArrayList<>();
 					Contract cont = this.contracts.getContractById(conf.getId());
@@ -120,14 +120,17 @@ public class UpdateScheduler extends TimerTask {
 					else {
 						LOGGER.debug("Object NOT found in memory, building new");
 						// Build required components for each entry
-						Contract watcher = new SalesProperties().configProperties(conf, this.configs, this.events);
+						Contract watcher = new ContractBuilder().configProperties(conf, this.configs, this.events);
 						// Start the watcher
 						watcher.startSalesScheduler();
 						// Add this to internal memory buffer
 						this.contracts.addContract(watcher);
 						updatedItems.add(String.format("new: %s", watcher));
 					}
-					if(updatedItems.size() > 0) LOGGER.debug("Contract {} updated {}", conf.getId(), Arrays.toString(updatedItems.toArray()));
+					if(updatedItems.size() > 0) {
+						cont.setConfig(conf);
+						LOGGER.debug("Contract {} updated {}", conf.getId(), Arrays.toString(updatedItems.toArray()));
+					}
 				} catch(Exception ex) {
 					ex.printStackTrace();
 				}

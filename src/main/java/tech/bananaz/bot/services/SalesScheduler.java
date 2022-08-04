@@ -8,10 +8,11 @@ import lombok.Getter;
 import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import tech.bananaz.bot.models.Contract;
-import tech.bananaz.bot.models.SaleEvent;
-import tech.bananaz.bot.utils.KeyUtils;
-import tech.bananaz.bot.utils.LooksRareUtils;
-import tech.bananaz.bot.utils.OpenseaUtils;
+import tech.bananaz.models.Event;
+import tech.bananaz.utils.KeyUtils;
+import tech.bananaz.utils.LooksRareUtils;
+import tech.bananaz.utils.OpenseaUtils;
+import tech.bananaz.utils.ParsingUtils;
 import static java.util.Objects.nonNull;
 
 public class SalesScheduler extends TimerTask {
@@ -21,9 +22,8 @@ public class SalesScheduler extends TimerTask {
 	private Contract contract;
 	
 	// Resources and important
+	@Getter
 	private boolean active			= false;
-	private LooksRareUtils looksApi = new LooksRareUtils();
-	private KeyUtils kUtils         = new KeyUtils();
 	@Getter
 	private String openSeaLastHash  = "";
 	@Getter
@@ -31,6 +31,9 @@ public class SalesScheduler extends TimerTask {
 	@Getter
 	private long openSeaIdBuffer	= 0;
 	private Timer timer 		 	= new Timer(); // creating timer
+	private LooksRareUtils looksApi = new LooksRareUtils();
+	private KeyUtils kUtils         = new KeyUtils();
+	private ParsingUtils pUtils     = new ParsingUtils();
     private TimerTask task; // creating timer task
 	private static final Logger LOGGER = LoggerFactory.getLogger(SalesScheduler.class);
 
@@ -91,21 +94,24 @@ public class SalesScheduler extends TimerTask {
 		this.api = new OpenseaUtils(this.kUtils.getKey());
 		JSONObject marketSales = 
 				(!this.contract.isSlug()) ? 
-						this.api.getCollectionListed(this.contract.getContractAddress()) :
-						this.api.getCollectionListedWithSlug(this.contract.getContractAddress());
+						this.api.getEventsSalesAddress(this.contract.getContractAddress()) :
+							this.api.getEventsSalesSlug(this.contract.getContractAddress());
 		JSONArray assetEvents 	  = (JSONArray) marketSales.get("asset_events");
 		
 		if(!assetEvents.isEmpty()) {
-			ArrayList<SaleEvent> events = new ArrayList<>();
+			ArrayList<Event> events = new ArrayList<>();
 			for(int i = 0; i < assetEvents.size(); i++) {
 				// Grab sub-objects in message
-				JSONObject newListing   = (JSONObject) assetEvents.get(i);
-				long id = newListing.getAsNumber("id").longValue();
+				JSONObject sale   = (JSONObject) assetEvents.get(i);
+				long id = sale.getAsNumber("id").longValue();
 				if(id > this.openSeaIdBuffer) {
-					SaleEvent event = new SaleEvent(this.contract);
-					event.build(newListing);
+					// Build event
+					Event e = pUtils.buildOpenSeaEvent(
+										sale, 
+										this.contract.getConfig());
+					
 					// Append to the end of the List
-					events.add(event);
+					events.add(e);
 				} else break;
 			}
 			// Only process with data in events
@@ -116,11 +122,11 @@ public class SalesScheduler extends TimerTask {
 				if(this.openSeaIdBuffer != 0) {
 					// Process sorted array
 					for(int i = 0; i < events.size(); i++) {
-						SaleEvent event = events.get(i);
+						Event event = events.get(i);
 						if(this.contract.isShowBundles() || event.getQuantity() == 1) {
 							if(event.getId() > this.openSeaIdBuffer && !event.getHash().equalsIgnoreCase(this.openSeaLastHash)) {
 								// Log in terminal
-								logInfoNewListing(event);
+								logInfoNewEvent(event);
 
 								// Write, ensure not exists to not overwrite existing data
 								if(!this.contract.getEvents().existsById(event.getId()))
@@ -129,7 +135,7 @@ public class SalesScheduler extends TimerTask {
 						}
 					}
 				}
-				SaleEvent f0 = events.get(0);
+				Event f0 = events.get(0);
 				if(f0.getId() > this.openSeaIdBuffer) {
 					this.openSeaLastHash = f0.getHash();
 					this.openSeaIdBuffer = f0.getId();
@@ -140,7 +146,7 @@ public class SalesScheduler extends TimerTask {
 	}
 	
 	private void watchLooksRare() throws Exception {
-		JSONObject payload = this.looksApi.getEvents(this.contract.getContractAddress());
+		JSONObject payload = this.looksApi.getEventsSalesAddress(this.contract.getContractAddress());
 		JSONArray events   = (JSONArray) payload.get("data");
 		
 		if(!events.isEmpty()) {
@@ -151,15 +157,16 @@ public class SalesScheduler extends TimerTask {
 					long id = sale.getAsNumber("id").longValue();
 					if(id > this.previousLooksId) {
 						// Build event
-						SaleEvent event    = new SaleEvent(this.contract);
-						event.buildLooksRare(sale);
+						Event e = pUtils.buildLooksRareEvent(
+											sale, 
+											this.contract.getConfig());
 						
 						// Log in terminal
-						logInfoNewListing(event);
+						logInfoNewEvent(e);
 
 						// Write, ensure not exists to not overwrite existing data
-						if(!this.contract.getEvents().existsById(event.getId()))
-							this.contract.getEvents().save(event);
+						if(!this.contract.getEvents().existsById(e.getId()))
+							this.contract.getEvents().save(e);
 					} else break;
 				}
 			}
@@ -170,7 +177,7 @@ public class SalesScheduler extends TimerTask {
 		}
 	}
 	
-	private void logInfoNewListing(SaleEvent event) {
+	private void logInfoNewEvent(Event event) {
 		LOGGER.info("{}, {}", event.toString(),this.contract.toString());
 	}
 }

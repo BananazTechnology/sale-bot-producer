@@ -1,23 +1,26 @@
-package tech.bananaz.bot.models;
+package tech.bananaz.bot.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import tech.bananaz.bot.repositories.SaleConfigRepository;
-import tech.bananaz.bot.repositories.SaleEventRepository;
+import tech.bananaz.repositories.SaleConfigPagingRepository;
+import tech.bananaz.bot.models.Contract;
+import tech.bananaz.models.Sale;
+import tech.bananaz.repositories.EventPagingRepository;
 
 @Component
-public class SalesProperties {
+public class ContractBuilder {
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(SalesProperties.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ContractBuilder.class);
 
-	public Contract configProperties(SaleConfig config, SaleConfigRepository configs, SaleEventRepository events) throws RuntimeException, InterruptedException {
+	public Contract configProperties(Sale config, SaleConfigPagingRepository configs, EventPagingRepository events) throws RuntimeException, InterruptedException {
 		Contract output = null;
 		try {
 			// If no server or outputChannel then throw exception
 			output = new Contract();
 			output.setEvents(events);
 			output.setConfigs(configs);
+			output.setConfig(config);
 			output.setId(config.getId());
 			output.setContractAddress(config.getContractAddress());
 			output.setInterval(config.getInterval());
