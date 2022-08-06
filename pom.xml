@@ -11,12 +11,12 @@
 	
 	<groupId>tech.bananaz</groupId>
 	<artifactId>sale-bot-producer</artifactId>
-	<version>2.0.2</version>
+	<version>2.0.3</version>
 	<name>sale-bot-producer</name>
 	<description>A @spring-projects framework project which loads items into @mysql</description>
 	
 	<properties>
-		<bananaz.version>1.1.0</bananaz.version>
+		<bananaz.version>1.1.1</bananaz.version>
 		<java.version>11</java.version>
 		<sonar.projectKey>sale-producer-bot</sonar.projectKey>
 	</properties>
