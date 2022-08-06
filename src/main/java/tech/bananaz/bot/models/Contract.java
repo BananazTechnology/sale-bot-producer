@@ -54,6 +54,8 @@ public class Contract {
 	private boolean excludeLooks 	  = false;
 	
 	// To save on DB calls
+	@Exclude
+	@JsonIgnore
 	Sale config;
 
 	public void startSalesScheduler() {
