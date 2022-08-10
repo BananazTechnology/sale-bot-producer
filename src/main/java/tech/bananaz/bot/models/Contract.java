@@ -6,7 +6,7 @@ import lombok.ToString;
 import lombok.ToString.Exclude;
 import tech.bananaz.repositories.SaleConfigPagingRepository;
 import tech.bananaz.repositories.EventPagingRepository;
-import tech.bananaz.bot.services.SalesScheduler;
+import tech.bananaz.bot.services.EventScheduler;
 import tech.bananaz.models.Sale;
 
 @ToString(includeFieldNames=true)
@@ -15,7 +15,7 @@ public class Contract {
 	
 	@Exclude
 	@JsonIgnore
-	private SalesScheduler newRequest;
+	private EventScheduler newRequest;
 	
 	@Exclude
 	@JsonIgnore
@@ -39,8 +39,6 @@ public class Contract {
 	private boolean excludeOpensea 	  = false;
 	// Support for slug based API requests in OpenSea
 	private boolean isSlug 			  = false;
-	// Is Solana on OpenSea
-	private boolean isSolana 		  = false;
 	// For bundles support
 	private boolean showBundles 	  = true;
 
@@ -54,10 +52,12 @@ public class Contract {
 	private boolean excludeLooks 	  = false;
 	
 	// To save on DB calls
+	@Exclude
+	@JsonIgnore
 	Sale config;
 
 	public void startSalesScheduler() {
-		newRequest = new SalesScheduler(this);
+		newRequest = new EventScheduler(this);
 		newRequest.start();
 	}
 	

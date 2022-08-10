@@ -9,13 +9,14 @@ import net.minidev.json.JSONArray;
 import net.minidev.json.JSONObject;
 import tech.bananaz.bot.models.Contract;
 import tech.bananaz.models.Event;
+import tech.bananaz.repositories.EventPagingRepository;
 import tech.bananaz.utils.KeyUtils;
 import tech.bananaz.utils.LooksRareUtils;
 import tech.bananaz.utils.OpenseaUtils;
 import tech.bananaz.utils.ParsingUtils;
 import static java.util.Objects.nonNull;
 
-public class SalesScheduler extends TimerTask {
+public class EventScheduler extends TimerTask {
 	
 	// Resources declared in Runtime
 	private OpenseaUtils api;
@@ -34,10 +35,11 @@ public class SalesScheduler extends TimerTask {
 	private LooksRareUtils looksApi = new LooksRareUtils();
 	private KeyUtils kUtils         = new KeyUtils();
 	private ParsingUtils pUtils     = new ParsingUtils();
+	private String openSeaKey   	= "0";
     private TimerTask task; // creating timer task
-	private static final Logger LOGGER = LoggerFactory.getLogger(SalesScheduler.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(EventScheduler.class);
 
-	public SalesScheduler(Contract contract) {
+	public EventScheduler(Contract contract) {
 		this.contract = contract;
 		try {
 			this.api = new OpenseaUtils(this.kUtils.getKey());
@@ -76,7 +78,7 @@ public class SalesScheduler extends TimerTask {
 		if(nonNull(this.contract)) {
 			this.active = true;
 			this.task   = this;
-			LOGGER.info(String.format("Starting new SalesScheduler in %sms for: %s", startsIn, this.contract.toString()));
+			LOGGER.info(String.format("Starting new EventScheduler in %sms for: %s", startsIn, this.contract.toString()));
 			// Starts this new timer, starts at random time and runs per <interval> milliseconds
 			this.timer.schedule(task, startsIn , this.contract.getInterval());
 		}
@@ -90,8 +92,20 @@ public class SalesScheduler extends TimerTask {
 	}
 	
 	private void watchSales() throws Exception {
-		// Refresh OpenSea key before every use
-		this.api = new OpenseaUtils(this.kUtils.getKey());
+		// Grab events repository
+		EventPagingRepository repo = this.contract.getEvents();
+		
+		// Refresh OpenSea key if we can
+		try {
+			this.openSeaKey = this.kUtils.getKey();
+		} catch (Exception e) {
+			LOGGER.error("Failed on OpenSea key get exception {}", e.getMessage());
+		}
+		
+		// Init our OpenSea REST interface
+		this.api = new OpenseaUtils(this.openSeaKey);
+
+		// Make GET request for data
 		JSONObject marketSales = 
 				(!this.contract.isSlug()) ? 
 						this.api.getEventsSalesAddress(this.contract.getContractAddress()) :
@@ -124,7 +138,7 @@ public class SalesScheduler extends TimerTask {
 					for(int i = 0; i < events.size(); i++) {
 						Event event = events.get(i);
 						if(this.contract.isShowBundles() || event.getQuantity() == 1) {
-							if(event.getId() > this.openSeaIdBuffer && !event.getHash().equalsIgnoreCase(this.openSeaLastHash)) {
+							if(event.getId() > this.openSeaIdBuffer && !repo.existsByHash(event.getHash())) {
 								// Log in terminal
 								logInfoNewEvent(event);
 
