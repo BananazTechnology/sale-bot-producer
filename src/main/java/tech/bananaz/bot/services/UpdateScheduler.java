@@ -4,6 +4,7 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import tech.bananaz.bot.models.Contract;
 import tech.bananaz.bot.models.ContractCollection;
@@ -12,10 +13,15 @@ import tech.bananaz.models.Sale;
 import tech.bananaz.repositories.SaleConfigPagingRepository;
 import tech.bananaz.repositories.EventPagingRepository;
 import static java.util.Objects.nonNull;
+import static tech.bananaz.utils.EncryptionUtils.decryptSale;
 import static tech.bananaz.utils.StringUtils.nonEquals;
 
 @Component
 public class UpdateScheduler extends TimerTask {
+	
+	// Security
+	@Value("${bot.encryptionKey}")
+	private String key;
 	
 	@Autowired
 	private SaleConfigPagingRepository configs;
@@ -56,83 +62,100 @@ public class UpdateScheduler extends TimerTask {
 			Iterable<Sale> allListingConfigs = this.configs.findAll();
 			for(Sale conf : allListingConfigs) {
 				try {
+					// Must use decrypted values
+					Sale decryptedConf = decryptSale(this.key, conf);
+					
 					List<String> updatedItems = new ArrayList<>();
 					Contract cont = this.contracts.getContractById(conf.getId());
 					// Update existing object in memory
 					if(nonNull(cont)) {
 						// Strings and Integers
 						// Contract Address
-						if(nonEquals(cont.getContractAddress(), conf.getContractAddress())) {
-							updatedItems.add(String.format("contractAddress: %s->%s", cont.getContractAddress(), conf.getContractAddress()));
-							cont.setContractAddress(conf.getContractAddress());
+						if(nonEquals(cont.getContractAddress(), decryptedConf.getContractAddress())) {
+							updatedItems.add(String.format("contractAddress: %s->%s", cont.getContractAddress(), decryptedConf.getContractAddress()));
+							cont.setContractAddress(decryptedConf.getContractAddress());
 						}
 						// Interval
-						if(nonEquals(cont.getInterval(), conf.getInterval())) {
-							updatedItems.add(String.format("interval: %s->%s", cont.getInterval(), conf.getInterval()));
-							cont.setInterval(conf.getInterval());
+						if(nonEquals(cont.getInterval(), decryptedConf.getInterval())) {
+							updatedItems.add(String.format("interval: %s->%s", cont.getInterval(), decryptedConf.getInterval()));
+							cont.setInterval(decryptedConf.getInterval());
 						}
 						// Rarity Slug
-						if(nonEquals(cont.getRaritySlug(), conf.getRaritySlugOverwrite())) {
-							updatedItems.add(String.format("raritySlug: %s->%s", cont.getRaritySlug(), conf.getRaritySlugOverwrite()));
-							cont.setRaritySlug(conf.getRaritySlugOverwrite());
+						if(nonEquals(cont.getRaritySlug(), decryptedConf.getRaritySlugOverwrite())) {
+							updatedItems.add(String.format("raritySlug: %s->%s", cont.getRaritySlug(), decryptedConf.getRaritySlugOverwrite()));
+							cont.setRaritySlug(decryptedConf.getRaritySlugOverwrite());
 						}
 						
 
 						// Booleans
 						// Burn Watcher
-						if(nonEquals(cont.isBurnWatcher(), conf.getBurnWatcher())) {
-							updatedItems.add(String.format("burnWatcher: %s->%s", cont.isBurnWatcher(), conf.getBurnWatcher()));
-							cont.setBurnWatcher(conf.getBurnWatcher());
+						if(nonEquals(cont.isBurnWatcher(), decryptedConf.getBurnWatcher())) {
+							updatedItems.add(String.format("burnWatcher: %s->%s", cont.isBurnWatcher(), decryptedConf.getBurnWatcher()));
+							cont.setBurnWatcher(decryptedConf.getBurnWatcher());
 						}
 						// Mint Watcher
-						if(nonEquals(cont.isMintWatcher(), conf.getMintWatcher())) {
-							updatedItems.add(String.format("mintWatcher: %s->%s", cont.isMintWatcher(), conf.getMintWatcher()));
-							cont.setMintWatcher(conf.getMintWatcher());
+						if(nonEquals(cont.isMintWatcher(), decryptedConf.getMintWatcher())) {
+							updatedItems.add(String.format("mintWatcher: %s->%s", cont.isMintWatcher(), decryptedConf.getMintWatcher()));
+							cont.setMintWatcher(decryptedConf.getMintWatcher());
 						}
 						// Auto Rarity
-						if(nonEquals(cont.isAutoRarity(), conf.getAutoRarity())) {
-							updatedItems.add(String.format("autoRarity: %s->%s", cont.isAutoRarity(), conf.getAutoRarity()));
-							cont.setAutoRarity(conf.getAutoRarity());
+						if(nonEquals(cont.isAutoRarity(), decryptedConf.getAutoRarity())) {
+							updatedItems.add(String.format("autoRarity: %s->%s", cont.isAutoRarity(), decryptedConf.getAutoRarity()));
+							cont.setAutoRarity(decryptedConf.getAutoRarity());
 						}
 						// Show Bundles
-						if(nonEquals(cont.isShowBundles(), conf.getShowBundles())) {
-							updatedItems.add(String.format("showBundles: %s->%s", cont.isShowBundles(), conf.getShowBundles()));
-							cont.setShowBundles(conf.getShowBundles());
+						if(nonEquals(cont.isShowBundles(), decryptedConf.getShowBundles())) {
+							updatedItems.add(String.format("showBundles: %s->%s", cont.isShowBundles(), decryptedConf.getShowBundles()));
+							cont.setShowBundles(decryptedConf.getShowBundles());
 						}
 						// Exclude OpenSea
-						if(nonEquals(cont.isExcludeOpensea(), conf.getExcludeOpensea())) {
-							updatedItems.add(String.format("excludeOpensea: %s->%s", cont.isExcludeOpensea(), conf.getExcludeOpensea()));
-							cont.setExcludeOpensea(conf.getExcludeOpensea());
+						if(nonEquals(cont.isExcludeOpensea(), decryptedConf.getExcludeOpensea())) {
+							updatedItems.add(String.format("excludeOpensea: %s->%s", cont.isExcludeOpensea(), decryptedConf.getExcludeOpensea()));
+							cont.setExcludeOpensea(decryptedConf.getExcludeOpensea());
 						}
 						// Exclude Looksrare
-						if(nonEquals(cont.isExcludeLooks(), conf.getExcludeLooksrare())) {
-							updatedItems.add(String.format("excludeLooksrare: %s->%s", cont.isExcludeLooks(), conf.getExcludeLooksrare()));
-							cont.setExcludeLooks(conf.getExcludeLooksrare());
+						if(nonEquals(cont.isExcludeLooks(), decryptedConf.getExcludeLooksrare())) {
+							updatedItems.add(String.format("excludeLooksrare: %s->%s", cont.isExcludeLooks(), decryptedConf.getExcludeLooksrare()));
+							cont.setExcludeLooks(decryptedConf.getExcludeLooksrare());
 						}
 						// Active
-						if(nonEquals(cont.isActive(), conf.getActive())) {
-							updatedItems.add(String.format("active: %s->%s", cont.isActive(), conf.getActive()));
-							cont.setActive(conf.getActive());
+						if(nonEquals(cont.isActive(), decryptedConf.getActive())) {
+							updatedItems.add(String.format("active: %s->%s", cont.isActive(), decryptedConf.getActive()));
+							cont.setActive(decryptedConf.getActive());
+						}
+						// Slug
+						if(nonEquals(cont.isSlug(), decryptedConf.getIsSlug())) {
+							updatedItems.add(String.format("isSlug: %s->%s", cont.isSlug(), "true"));
+							cont.setSlug(decryptedConf.getIsSlug());
+						}
+						// If Solana or Polygon set slug
+						if(decryptedConf.getSolanaOnOpensea() || decryptedConf.getPolygonOnOpensea()) {
+							updatedItems.add(String.format("isSlug: %s->%s", cont.isSlug(), "true"));
+							cont.setSlug(true);
 						}
 
 					} 
 					// Add new contract
 					else {
 						LOGGER.debug("Object NOT found in memory, building new");
-						// Build required components for each entry
-						Contract watcher = new ContractBuilder().configProperties(conf, this.configs, this.events);
-						// Start the watcher
-						watcher.startSalesScheduler();
-						// Add this to internal memory buffer
-						this.contracts.addContract(watcher);
-						updatedItems.add(String.format("new: %s", watcher));
+						try {
+							// Build required components for each entry
+							Contract watcher = new ContractBuilder().configProperties(decryptedConf, this.configs, this.events);
+							// Start the watcher
+							watcher.startSalesScheduler();
+							// Add this to internal memory buffer
+							this.contracts.addContract(watcher);
+							updatedItems.add(String.format("new: %s", watcher));
+						} catch (Exception e) {
+							LOGGER.error("Failed starting config with id {}, exception {}", conf.getId(), e.getMessage());
+						}
 					}
 					if(updatedItems.size() > 0) {
 						if(nonNull(cont)) cont.setConfig(conf);
 						LOGGER.debug("Contract {} updated {}", conf.getId(), Arrays.toString(updatedItems.toArray()));
 					}
 				} catch(Exception ex) {
-					ex.printStackTrace();
+					LOGGER.error("Failed inital parsing on id {}, exception {}", conf.getId(), ex.getMessage());
 				}
 			}
 		}
