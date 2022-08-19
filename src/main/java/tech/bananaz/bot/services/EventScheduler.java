@@ -160,34 +160,61 @@ public class EventScheduler extends TimerTask {
 	}
 	
 	private void watchLooksRare() throws Exception {
-		JSONObject payload = this.looksApi.getEventsSalesAddress(this.contract.getContractAddress());
-		JSONArray events   = (JSONArray) payload.get("data");
+		// Grab events repository
+		EventPagingRepository repo = this.contract.getEvents();
 		
-		if(!events.isEmpty()) {
-			if(this.previousLooksId != 0) {
-				for(int i = 0; i < events.size(); i++) {
-					// Grab sub-objects in message 
-					JSONObject sale = (JSONObject) events.get(i);
-					long id = sale.getAsNumber("id").longValue();
-					if(id > this.previousLooksId) {
-						// Build event
-						Event e = pUtils.buildLooksRareEvent(
-											sale, 
-											this.contract.getConfig());
-						
-						// Log in terminal
-						logInfoNewEvent(e);
+		JSONObject payload = this.looksApi.getEventsSalesAddress(this.contract.getContractAddress());
+		JSONArray lrEvents   = (JSONArray) payload.get("data");
+		
+		if(!lrEvents.isEmpty()) {
+			ArrayList<Event> events = new ArrayList<>();
+			for(int i = 0; i < lrEvents.size(); i++) {
+				// Grab sub-objects in message 
+				JSONObject listing = (JSONObject) lrEvents.get(i);
+				int id = Integer.valueOf(listing.getAsString("id"));
+				if(id > this.previousLooksId) {
+					// Build event
+					Event e = pUtils.buildLooksRareEvent(
+										listing, 
+										this.contract.getConfig());
+					
 
-						// Write, ensure not exists to not overwrite existing data
-						if(!this.contract.getEvents().existsById(e.getId()))
-							this.contract.getEvents().save(e);
-					} else break;
-				}
+					// Append to the end of the List
+					events.add(e);
+				} else break;
 			}
-			JSONObject sale = (JSONObject) events.get(0);
-			long id = sale.getAsNumber("id").longValue();
-			if(this.previousLooksId == id) LOGGER.info(String.format("No sales found this LooksRare loop: %s", this.contract.toString()));
-			previousLooksId = id;
+			
+			
+			// Only process with data in events
+			if(events.size() > 0) {
+				//Sort array
+				Collections.sort(events);
+
+				if(this.previousLooksId != 0) {
+					// Process sorted array
+					for(int i = 0; i < events.size(); i++) {
+						Event event = events.get(i);
+						if(this.contract.isShowBundles() || event.getQuantity() == 1) {
+							if(event.getId() > this.previousLooksId && !repo.existsByHash(event.getHash())) {
+								// Log in terminal
+								logInfoNewEvent(event);
+
+								// Write, ensure not exists to not overwrite existing data
+								// Write, ensure not exists to not overwrite existing data
+								try {
+									if(!repo.existsById(event.getId()))
+										repo.save(event);
+								} catch (Exception ex) {
+									LOGGER.error("Error on LooksRare save dispatch of contract id {} with excpetion {} - {}", this.contract.getId(), ex.getCause(), ex.getMessage());
+								}
+							} else break;
+						}
+					}
+				}
+				Event f0 = events.get(0);
+				if(f0.getId() > this.previousLooksId) this.previousLooksId = f0.getId();
+			}
+			if(events.size() == 0) LOGGER.info(String.format("No listings found this LooksRare loop: %s", this.contract.toString()));
 		}
 	}
 	
