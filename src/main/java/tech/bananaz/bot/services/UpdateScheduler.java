@@ -156,7 +156,9 @@ public class UpdateScheduler extends TimerTask {
 						LOGGER.error("Failed inital parsing on id {}, exception {}", conf.getId(), ex.getMessage());
 					}
 				}
-			} catch (Exception e) {}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 		
 		// Cleanup
@@ -179,7 +181,9 @@ public class UpdateScheduler extends TimerTask {
 					// Any extra contracts removed next time
 					break;
 				}
-			} catch (Exception e) {}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		}
 	}
 	
