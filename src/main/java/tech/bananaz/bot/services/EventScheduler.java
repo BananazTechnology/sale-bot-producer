@@ -143,8 +143,13 @@ public class EventScheduler extends TimerTask {
 								logInfoNewEvent(event);
 
 								// Write, ensure not exists to not overwrite existing data
-								if(!this.contract.getEvents().existsById(event.getId()))
-									this.contract.getEvents().save(event);
+								try {
+									if(!this.contract.getEvents().existsById(event.getId()))
+										this.contract.getEvents().save(event);
+								} catch(Exception ex) {
+									LOGGER.error("Error on OpenSea save dispatch of contract id {} with excpetion {} - {}", this.contract.getId(), ex.getCause(), ex.getMessage());
+									throw new Exception("Database save error");
+								}
 							} else break;
 						}
 					}
@@ -200,12 +205,12 @@ public class EventScheduler extends TimerTask {
 								logInfoNewEvent(event);
 
 								// Write, ensure not exists to not overwrite existing data
-								// Write, ensure not exists to not overwrite existing data
 								try {
 									if(!repo.existsById(event.getId()))
 										repo.save(event);
 								} catch (Exception ex) {
 									LOGGER.error("Error on LooksRare save dispatch of contract id {} with excpetion {} - {}", this.contract.getId(), ex.getCause(), ex.getMessage());
+									throw new Exception("Database save error");
 								}
 							} else break;
 						}
