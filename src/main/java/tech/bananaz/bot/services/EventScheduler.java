@@ -219,7 +219,7 @@ public class EventScheduler extends TimerTask {
 				Event f0 = events.get(0);
 				if(f0.getId() > this.previousLooksId) this.previousLooksId = f0.getId();
 			}
-			if(events.size() == 0) LOGGER.info(String.format("No listings found this LooksRare loop: %s", this.contract.toString()));
+			if(events.size() == 0) LOGGER.info(String.format("No sales found this LooksRare loop: %s", this.contract.toString()));
 		}
 	}
 	
