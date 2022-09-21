@@ -34,10 +34,6 @@ public class Contract {
 	private boolean active 			  = true;
 
 	// OpenSea settings
-	// Supports burning
-	private boolean burnWatcher 	  = false;
-	// Supports minting
-	private boolean mintWatcher 	  = false;
 	private boolean excludeOpensea 	  = false;
 	// Support for slug based API requests in OpenSea
 	private boolean isSlug 			  = false;

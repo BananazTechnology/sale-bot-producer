@@ -24,8 +24,6 @@ public class ContractBuilder {
 			output.setId(config.getId());
 			output.setContractAddress(config.getContractAddress());
 			output.setInterval(config.getInterval());
-			output.setBurnWatcher(config.getBurnWatcher());
-			output.setMintWatcher(config.getMintWatcher());
 			output.setExcludeOpensea(config.getExcludeOpensea());
 			output.setExcludeLooks(config.getExcludeLooksrare());
 			output.setRarityEngine(config.getRarityEngine());

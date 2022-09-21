@@ -89,16 +89,6 @@ public class UpdateScheduler extends TimerTask {
 							
 	
 							// Booleans
-							// Burn Watcher
-							if(nonEquals(cont.isBurnWatcher(), decryptedConf.getBurnWatcher())) {
-								updatedItems.add(String.format("burnWatcher: %s->%s", cont.isBurnWatcher(), decryptedConf.getBurnWatcher()));
-								cont.setBurnWatcher(decryptedConf.getBurnWatcher());
-							}
-							// Mint Watcher
-							if(nonEquals(cont.isMintWatcher(), decryptedConf.getMintWatcher())) {
-								updatedItems.add(String.format("mintWatcher: %s->%s", cont.isMintWatcher(), decryptedConf.getMintWatcher()));
-								cont.setMintWatcher(decryptedConf.getMintWatcher());
-							}
 							// Show Bundles
 							if(nonEquals(cont.isShowBundles(), decryptedConf.getShowBundles())) {
 								updatedItems.add(String.format("showBundles: %s->%s", cont.isShowBundles(), decryptedConf.getShowBundles()));
